@@ -1,0 +1,27 @@
+/* 
+PARTE 1 DO TRABALHO SOBRE SISTEMA DE CONTROLE DE ESTOQUES
+Alunos: Diana Caudeic Trevisan e Antônio (...)
+
+Propriedades necessárias do método:
+1. O estoque inicial não pode ser negativo
+2. A quantidade de produtos de saída não pode ser maior que a quantidade total do estoque
+3. A quantidade de entrada deve aumentar a quantidade em estoque corretamente
+4. A quantidade de saída deve diminuir a quantidade em estoque corretamente
+5. A quantidade movimentada não pode ser negativa
+6. O estoque final não pode ser negativo
+
+
+
+ */
+
+method movimentaEstoque(estoque: Int, quantidade: Int, entrada: Bool) 
+returns (novoEstoque: Int)
+    requires estoque >= 0 // Propriedade 1
+    requires quantidade >= 0 // Propriedade 5
+    requires !entrada ==> quantidade <= estoque // Propriedade 2
+    ensures novoEstoque >= 0 // Propriedade 6
+    ensures entrada ==> novoEstoque == estoque + quantidade // Propriedade 3
+    ensures !entrada ==> novoEstoque == estoque - quantidade // Propriedade 4
+{
+    // implementação
+}
