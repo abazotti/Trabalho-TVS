@@ -41,6 +41,29 @@ returns (novoEstoque: Int)
 
 4) Verificação do método
 
-Método não apresenta contra-exemplos com os casos e asserts considerados.
+Método não apresentou contra-exemplos com os casos e asserts considerados.
+
+Contra-exemplos possíveis:
+
+a) novoEstoque ser negativo:
+
+    Entrada é falso:
+
+    Garantimos que o novoEstoque (subtração entre estoque e quantidade) sempre será 
+não negativo pois o método requer que o estoque seja maior ou igual a zero e quantidade
+removida seja menor ou igual ao estoque atual
+
+    Entrada é verdadeiro:
+
+    No caso de entrada ser verdadeiro, já que também garantimos que quantidade será maior ou igual
+a zero e que estoque é maior ou igual a zero, temos a soma de dois números positivos, o que sempre será
+maior ou igual a zero
+
+b) novoEstoque não corresponder a soma (quando adicionando estoque)
+ou subtração (quando removendo estoque) entre estoque e quantidade
+
+    O valor correto de novoEstoque é garantido pelo ensures e pelos condicionais if e else,
+onde se entrada for verdadeiro (adicionar estoque) nós somamos, e se for falso (remover estoque)
+subtraímos.
 
 */
