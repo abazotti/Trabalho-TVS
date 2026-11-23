@@ -1,0 +1,47 @@
+/* 
+PARTE 2 DO TRABALHO SOBRE SISTEMA DE CONTROLE DE ESTOQUES
+Alunos: Diana Caudeic Trevisan e Antônio Lopes Bazotti
+
+1) Propriedades necessárias do método:
+1. O estoque inicial não pode ser negativo
+2. As sequências 'qtdades' e 'entradas' devem possuir o mesmo tamanho
+3. As quantidades movimentadas devem ser maiores ou iguais a zero
+4. Uma operação de saída só poderá ocorrer se houver estoque suficiente no momento da movimentação
+5. Cada operação deve atualizar o estoque corretamente
+
+*/
+// Método da parte 1: auxiliar
+method movimentaEstoque(estoque: Int, quantidade: Int, entrada: Bool) 
+returns (novoEstoque: Int)
+    requires estoque >= 0
+    requires quantidade >= 0
+    requires !entrada ==> quantidade <= estoque
+    ensures novoEstoque >= 0
+    ensures entrada ==> novoEstoque == estoque + quantidade
+    ensures !entrada ==> novoEstoque == estoque - quantidade
+{
+    if(entrada){
+        novoEstoque := estoque + quantidade
+        assert novoEstoque >= 0
+    }
+    else
+    {
+        novoEstoque := estoque - quantidade
+        assert novoEstoque >= 0
+    }
+}
+
+// 2) Contrato
+method processarOperacoes(
+    estoqueInicial: Int,
+    qtdades: Seq[Int],
+    entradas: Seq[Bool]
+)
+returns (estoqueFinal: Int)
+    requires estoqueInicial >= 0 // Propriedade 1
+    requires |qtdades| == |entradas| // Propriedade 2
+    requires forall j: Int :: // Propriedade 3
+        0 <= j && j < |qtdades| ==> qtdades[j] >= 0
+
+    ensures estoqueFinal >= -1 // Pós-condição: estoque final é não negativo ou erro (-1)
+    ensures |qtdades| == 0 ==> estoqueFinal == estoqueInicial // uma sequência vazia mantém o estoque inicial
