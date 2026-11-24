@@ -11,11 +11,29 @@ Alunos: Diana Caudeic Trevisan e Antônio Lopes Bazotti
 
 */
 // Método da parte 1: auxiliar
+
+function somaParcial(s: Seq[Int], b: Seq[Bool], k : Int): Int
+requires |s| == |b|
+requires 0 <= k <= |s|
+{
+    //Função utilizada no requires do processarOperacoes, soma todas as entradas e retorna o valor
+    
+        k == 0 ? 0 : b[k - 1] ? s[k - 1] + somaParcial(s, b, k - 1) : somaParcial(s, b, k - 1) - s[k - 1]
+}
+
+function soma(s: Seq[Int], b: Seq[Bool]): Int
+requires |s| == |b|
+{
+    //Função utilizada no requires do processarOperacoes, soma todas as entradas e retorna o valor
+    
+        |s| == 0 ? 0 : b[0] ? s[0] + soma(s[1..], b[1..]) : soma(s[1..], b[1..]) - s[0]
+}
+
 method movimentaEstoque(estoque: Int, quantidade: Int, entrada: Bool) 
 returns (novoEstoque: Int)
     requires estoque >= 0
     requires quantidade >= 0
-    requires !entrada ==> quantidade <= estoque
+    requires !entrada ==> estoque - quantidade >= 0
     ensures novoEstoque >= 0
     ensures entrada ==> novoEstoque == estoque + quantidade
     ensures !entrada ==> novoEstoque == estoque - quantidade
@@ -31,6 +49,22 @@ returns (novoEstoque: Int)
     }
 }
 
+method lemaSomaEquivalente(s: Seq[Int], b: Seq[Bool])
+    requires |s| == |b|
+    ensures somaParcial(s, b, |s|) == soma(s, b)
+{
+    var k: Int := 0
+    while (k < |s|)
+        invariant 0 <= k && k <= |s|
+        invariant soma(s, b) == somaParcial(s, b, k) + soma(s[k..], b[k..])
+        decreases |s| - k
+    {
+        assert s[k..][1..] == s[k + 1..]
+        assert b[k..][1..] == b[k + 1..]
+        k := k + 1
+    }
+}
+
 // 2) Contrato
 method processarOperacoes(
     estoqueInicial: Int,
@@ -42,6 +76,71 @@ returns (estoqueFinal: Int)
     requires |qtdades| == |entradas| // Propriedade 2
     requires forall j: Int :: // Propriedade 3
         0 <= j && j < |qtdades| ==> qtdades[j] >= 0
+    requires forall k: Int ::{somaParcial(qtdades, entradas, k)} // Propriedade 4
+        0 <= k <= |qtdades| ==> somaParcial(qtdades, entradas, k) + estoqueInicial >= 0
 
     ensures estoqueFinal >= -1 // Pós-condição: estoque final é não negativo ou erro (-1)
     ensures |qtdades| == 0 ==> estoqueFinal == estoqueInicial // uma sequência vazia mantém o estoque inicial
+    ensures estoqueFinal == soma(qtdades, entradas) + estoqueInicial // o valor do estoque final condiz com a soma do valor liquido de entradas e saidas mais o estoque inicial
+    {
+        var i: Int := 0
+        var somaP: Int := 0
+        var temp: Int := estoqueInicial
+        estoqueFinal := 0
+
+        if(|qtdades| == 0){
+            estoqueFinal := estoqueInicial
+        }
+        else{
+        while(i < |qtdades|)
+        invariant 0 <= i <= |qtdades|
+        invariant temp == estoqueInicial + somaParcial(qtdades, entradas, i)
+        invariant temp >= 0
+        decreases |qtdades| - i
+            {
+                assert estoqueInicial + somaParcial(qtdades, entradas, i + 1) >= 0
+                temp := movimentaEstoque(temp, qtdades[i], entradas[i])
+                i := i + 1
+            }
+        }
+
+        lemaSomaEquivalente(qtdades, entradas)
+
+        estoqueFinal := temp
+    }
+
+
+// 4) Contra-exemplos gerados:
+/*
+    
+
+    a)
+    processaOperacoes não garantia que o valor passado para a função auxiliar movimentaEstoque seria positivo sempre, pois uma sequência de 
+remoções poderia tornar o estoque negativo. Primeiro foi tentado utilizar uma função auxiliar de soma para garantir que a soma mais o valor inicial seria positivo, porém isso não servia de garantia
+    Contra-exemplo: 
+    soma das entradas e saidas = 50 (valor líquido)
+    Sequência de saídas (com estoqueInicial 0) [-50, 50, 50]
+    
+    Apesar da soma ser 50, o valor após a primeira iteração seria negativo, assim não garantindo o ensures da função movimentaEstoque. Logo,
+foi utilizado a somaParcial para garantir que a sequência de somas, junta com o estoqueInicial, sempre seja positivo.
+
+    b)
+    O ultimo ensures não funcionava, pois o viper não percebia que as somas parciais eram equivalentes a soma total, assim foi criado um método lemaSomaEquivalente para
+provar que somando as quantidades um por um era o mesmo que somar o valor total líquido
+
+    c)
+    A lógica do requires da propriedade 4 estava incorreta, antes afirmava que somaParcial(qtdades, entradas, k) devia ser menor que estoqueInicial para garantir
+que movimentaEstoque não receberia valores negativos, porém isso estava incorreto.
+
+    5) Correção total:
+
+
+
+    A correção parcial é garantida pelo fato de que, atráves dos diversos requires e ensures, o estoque nunca fica negativo, nem no percorrer do método nem ao final da
+execução.
+    Já a correção total é garantida pelo fato de que o único loop do método chama uma função que termina, e o loop em si termina pois a diferença entre o tamanho da sequência
+e "i" diminui a cada passo pois i é incrementado a cada passo, assim certificando que em algum momento i vai ser maior ou igual a |qtdades|, assim saindo do loop.
+
+
+    Recursos utilizados: slides do professor e IA do google (para o lemaSomaEquivalente e os invariantes e assert do loop)
+*/
